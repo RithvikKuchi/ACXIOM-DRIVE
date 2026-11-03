@@ -1,0 +1,674 @@
+{
+  "testedAtUtc": "2026-11-03T18:57:49.745168+00:00",
+  "baseUrl": "http://localhost:5081",
+  "total": 133,
+  "passed": 133,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "Anonymous dashboard redirects to login",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Anonymous customer API returns 401",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Anonymous user administration is protected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "API login without CSRF is rejected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Invalid login is rejected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Login admin@acxiom.local",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Login manager@acxiom.local",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Login sales@acxiom.local",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Login sales2@acxiom.local",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Sales sees only its own assignment option",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin sees the active sales team",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin page renders: /",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin page renders: /Crm/Index?kind=customers",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin page renders: /Crm/Index?kind=leads",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin page renders: /Crm/Index?kind=opportunities",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin page renders: /Crm/Index?kind=followups",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin page renders: /Crm/Index?kind=activities",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin page renders: /Users",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Admin page renders: /Audit",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Create form renders: customers",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Create form renders: leads",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Create form renders: opportunities",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Create form renders: followups",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Create form renders: activities",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Report renders: customers",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Report renders: leads",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Report renders: opportunities",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Report renders: followups",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Report renders: pipeline",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Report renders: conversion",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Report renders: activity",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Report renders: audit",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Manager pipeline access",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Manager cannot administer users",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Sales cannot view audit log",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Sales cannot view audit report",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Missing required customer fields",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Invalid customer email",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Invalid customer phone",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Overlong customer name",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Customer creation without CSRF",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Create valid customer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Customer DTO excludes internal credentials",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Duplicate normalized customer email",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Duplicate customer phone",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Sales can read its assigned customer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Other sales cannot read customer by ID",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Other sales cannot edit customer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Other sales cannot delete customer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Sales cannot assign to another owner",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Sales list contains only assigned records",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Manager can read team customer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Update customer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Customer update persisted",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Customer Details page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Customer Edit page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Customer Delete page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Search and pagination API",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Opportunity rejects Zero amount",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Opportunity rejects Negative amount",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Opportunity rejects Probability above 100",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Opportunity rejects Probability below zero",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Opportunity rejects Past expected close date",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Opportunity rejects Nonexistent customer reference",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Opportunity rejects Invalid stage",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Opportunity rejects Money precision",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Sales cannot reference another owner customer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Create opportunity",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Pipeline JSON API",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Close opportunity as won",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Won probability normalized to 100",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Won opportunity has recorded outcome date",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Reject past new follow-up",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Reject missing follow-up relationship",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Create follow-up",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Reschedule follow-up",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Complete follow-up",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Create activity",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Complete activity",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Reject invalid lead status",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Reject negative expected value",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Create new lead",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Reject conversion before qualification",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Reject skipped lead transition",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Lead transition to Contacted",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Lead transition to Qualified",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Convert qualified lead into customer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Converted lead links customer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Reject repeated conversion",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Converted lead history cannot be deleted",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "opportunities Details page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "opportunities Edit page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "opportunities Delete page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "followups Details page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "followups Edit page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "followups Delete page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "activities Details page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "activities Edit page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "activities Delete page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "leads Details page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "leads Edit page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "leads Delete page renders",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Related customer deletion is blocked",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Filtered CSV export",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "CSV has header and created customer",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "CSV export honors sales ownership",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Reject reversed report date range",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Audit page contains create/update actions",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Audit output does not contain demo password",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Razor encodes stored HTML",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "CSV formula injection is neutralized",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Delete activities",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Deleted activities returns 404",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Delete followups",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Deleted followups returns 404",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Delete opportunities",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Deleted opportunities returns 404",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Delete customers",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Deleted customers returns 404",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Registration rejects weak password",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Registration succeeds with valid policy",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Registered account cannot self-select Admin",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "New registered sales user has no others records",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Logout ends API session",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Logged-out API is protected",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Five failures lock account even with correct password",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "User administration excludes password hashes",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Session cookie is HttpOnly",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Browser security headers set",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Offline asset available: /lib/bootstrap.min.css",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Offline asset available: /lib/chart.umd.js",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Offline asset available: /lib/jquery.validate.min.js",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Offline asset available: /lib/jquery.validate.unobtrusive.min.js",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}

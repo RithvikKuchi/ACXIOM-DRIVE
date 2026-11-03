@@ -1,0 +1,29 @@
+@model AuditViewModel
+@{
+    ViewData["Title"] = "Audit log";
+    string PageLink(int page) => Url.Action("Index", "Audit", new { userId = Model.UserId, module = Model.Module, actionFilter = Model.ActionFilter, query = Model.Query, from = Model.From?.ToString("yyyy-MM-dd"), to = Model.To?.ToString("yyyy-MM-dd"), page }) ?? "";
+}
+<div class="page-header"><div><div class="eyebrow">ACCOUNTABILITY AT EVERY STEP</div><h1>Audit log</h1><p>A protected record of security and business activity.</p></div><a asp-controller="Reports" asp-action="Index" asp-route-type="audit" class="btn btn-outline-secondary"><partial name="_Icon" model='@("report")' /> Audit report</a></div>
+<section class="card">
+<form method="get" class="filter-panel audit-filters">
+    <div><label for="query" class="form-label">Search</label><input id="query" name="query" value="@Model.Query" maxlength="100" class="form-control" placeholder="Action, module, record ID" /></div>
+    <div><label for="userId" class="form-label">User</label><select id="userId" name="userId" class="form-select"><option value="">All users</option>@foreach(var user in Model.Users.OrderBy(x => x.Value)){<option value="@user.Key" selected="@(Model.UserId == user.Key)">@user.Value</option>}</select></div>
+    <div><label for="module" class="form-label">Module</label><select id="module" name="module" class="form-select"><option value="">All modules</option>@foreach(var module in Model.Modules){<option value="@module" selected="@(Model.Module == module)">@module</option>}</select></div>
+    <div><label for="actionFilter" class="form-label">Action</label><select id="actionFilter" name="actionFilter" class="form-select"><option value="">All actions</option>@foreach(var action in Model.Actions){<option value="@action" selected="@(Model.ActionFilter == action)">@action</option>}</select></div>
+    <div><label for="from" class="form-label">From (UTC)</label><input type="date" id="from" name="from" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+    <div><label for="to" class="form-label">To (UTC)</label><input type="date" id="to" name="to" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+    <div class="filter-actions"><button type="submit" class="btn btn-primary">Apply filters</button><a asp-action="Index" class="btn btn-light">Reset</a></div>
+</form>
+<div asp-validation-summary="All" class="text-danger px-4"></div>
+<div class="table-toolbar"><span><strong>@Model.Total.ToString("N0")</strong> events</span><span class="subtle-tag">Read-only · UTC timestamps</span></div>
+<div class="table-responsive"><table class="table audit-table"><thead><tr><th>Timestamp (UTC)</th><th>User</th><th>Action</th><th>Module / record</th><th>Result</th><th>Details</th></tr></thead><tbody>
+@foreach(var item in Model.Events)
+{
+    var username = item.UserId != null && Model.Users.TryGetValue(item.UserId, out var foundName) ? foundName : "System / anonymous";
+    <tr><td class="text-nowrap">@item.CreatedDate.ToString("dd MMM yyyy")<small class="cell-subtitle">@item.CreatedDate.ToString("HH:mm:ss")</small></td><td>@username<small class="cell-subtitle">@item.IpAddress</small></td><td><strong>@item.Action</strong></td><td>@item.EntityName<small class="cell-subtitle">@(string.IsNullOrEmpty(item.RecordId) ? "—" : "#" + item.RecordId)</small></td><td><span class="badge @(item.Result == "Success" ? "badge-soft-success" : "badge-soft-danger")">@item.Result</span></td><td><details class="audit-details"><summary>View changes</summary><div><strong>Before</strong><pre>@(string.IsNullOrEmpty(item.OldValue) ? "No previous value" : item.OldValue)</pre><strong>After</strong><pre>@(string.IsNullOrEmpty(item.NewValue) ? "No new value" : item.NewValue)</pre></div></details></td></tr>
+}
+@if(Model.Events.Count == 0){<tr><td colspan="6" class="empty-table"><strong>No audit events found</strong><p>Try clearing a filter or changing the date range.</p></td></tr>}
+</tbody></table></div>
+<div class="pagination-bar"><span>Page @Model.Page of @Model.Pages</span><nav aria-label="Audit pages"><ul class="pagination mb-0"><li class="page-item @(Model.Page <= 1 ? "disabled" : "")"><a class="page-link" href="@PageLink(Model.Page - 1)" aria-disabled="@(Model.Page <= 1)">Previous</a></li><li class="page-item @(Model.Page >= Model.Pages ? "disabled" : "")"><a class="page-link" href="@PageLink(Model.Page + 1)" aria-disabled="@(Model.Page >= Model.Pages)">Next</a></li></ul></nav></div>
+</section>
+<p class="report-note">Audit entries cannot be edited or deleted through the application. Credentials and security tokens are excluded from event details.</p>

@@ -1,0 +1,40 @@
+@model ReportViewModel
+@{
+    ViewData["Title"] = "Reports";
+    var reportTypes = new List<(string Key, string Name)> { ("pipeline", "Sales pipeline"), ("customers", "Customers"), ("leads", "Leads"), ("opportunities", "Opportunities"), ("followups", "Follow-ups"), ("conversion", "Sales & conversion") };
+    if (User.IsInRole("Admin") || User.IsInRole("Manager")) reportTypes.Add(("activity", "User activity"));
+    if (User.IsInRole("Admin")) reportTypes.Add(("audit", "Audit events"));
+    string Link(int? targetPage = null, int? targetSort = null, bool? descending = null, bool export = false) => Url.Action("Index", "Reports", new { type = Model.Type, query = Model.Query, status = Model.Status, ownerId = Model.OwnerId, from = Model.From?.ToString("yyyy-MM-dd"), to = Model.To?.ToString("yyyy-MM-dd"), sort = targetSort ?? Model.Sort, desc = descending ?? Model.Desc, page = targetPage ?? Model.Page, export }) ?? "";
+}
+<div class="page-header"><div><div class="eyebrow">TURN ACTIVITY INTO INSIGHT</div><h1>Reports</h1><p>Explore performance across your authorized sales workspace.</p></div><a class="btn btn-primary" href="@Link(export: true)"><partial name="_Icon" model='@("download")' /> Export CSV</a></div>
+<nav class="report-tabs" aria-label="Report types">
+@foreach(var report in reportTypes)
+{<a asp-action="Index" asp-route-type="@report.Key" class="@(Model.Type == report.Key ? "active" : "")" aria-current="@(Model.Type == report.Key ? "page" : null)">@report.Name</a>}
+</nav>
+<section class="card report-panel">
+    <div class="card-heading"><div><h2>@Model.Title</h2><p>@Model.Description</p></div><span class="subtle-tag">@(User.IsInRole("SalesExecutive") ? "Assigned records" : "Team records")</span></div>
+    <form method="get" class="filter-panel">
+        <input type="hidden" name="type" value="@Model.Type" />
+        <div><label for="query" class="form-label">Search</label><input id="query" name="query" value="@Model.Query" class="form-control" placeholder="Search report…" maxlength="100" /></div>
+        <div><label for="status" class="form-label">Status / stage / action</label><select id="status" name="status" class="form-select"><option value="">All</option>@foreach(var value in Model.Statuses){<option value="@value" selected="@(Model.Status == value)">@value</option>}</select></div>
+        <div><label for="owner" class="form-label">Owner / user</label><select id="owner" name="ownerId" class="form-select"><option value="">All authorized users</option>@foreach(var owner in Model.Owners){<option value="@owner.Id" selected="@(Model.OwnerId == owner.Id)">@owner.Name</option>}</select></div>
+        <div><label for="from" class="form-label">From</label><input type="date" id="from" name="from" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+        <div><label for="to" class="form-label">To</label><input type="date" id="to" name="to" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+        <div class="filter-actions"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-light" asp-action="Index" asp-route-type="@Model.Type">Reset</a></div>
+    </form>
+    <div asp-validation-summary="All" class="text-danger px-4"></div>
+</section>
+@if(Model.Metrics.Count > 0)
+{<div class="report-metrics">@foreach(var metric in Model.Metrics){<div class="card"><span>@metric.Key</span><strong>@metric.Value</strong></div>}</div>}
+<section class="card">
+    <div class="table-toolbar"><span><strong>@Model.Total.ToString("N0")</strong> result@(Model.Total == 1 ? "" : "s")</span><small>Click a column heading to sort</small></div>
+    <div class="table-responsive"><table class="table report-table"><thead><tr>
+    @for(var i = 0; i < Model.Columns.Count; i++)
+    {<th scope="col" aria-sort="@(Model.Sort == i ? Model.Desc ? "descending" : "ascending" : "none")"><a href="@Link(targetPage: 1, targetSort: i, descending: Model.Sort == i && !Model.Desc)">@Model.Columns[i] @if(Model.Sort == i){<span>@(Model.Desc ? "↓" : "↑")</span>}</a></th>}
+    </tr></thead><tbody>
+    @foreach(var row in Model.Rows){<tr>@foreach(var cell in row.Cells){<td>@cell</td>}</tr>}
+    @if(Model.Rows.Count == 0){<tr><td colspan="@Model.Columns.Count" class="empty-table"><strong>No results found</strong><p>Try a broader date range or clear the filters.</p></td></tr>}
+    </tbody></table></div>
+    <div class="pagination-bar"><span>Page @Model.Page of @Model.Pages</span><nav aria-label="Report pages"><ul class="pagination mb-0"><li class="page-item @(Model.Page <= 1 ? "disabled" : "")"><a class="page-link" href="@Link(targetPage: Model.Page - 1)" aria-disabled="@(Model.Page <= 1)">Previous</a></li><li class="page-item @(Model.Page >= Model.Pages ? "disabled" : "")"><a class="page-link" href="@Link(targetPage: Model.Page + 1)" aria-disabled="@(Model.Page >= Model.Pages)">Next</a></li></ul></nav></div>
+</section>
+<p class="report-note">Exports include every row matching the current filters and sort order. Access restrictions are enforced on the server.</p>

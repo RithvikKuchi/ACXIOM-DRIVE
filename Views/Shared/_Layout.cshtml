@@ -1,0 +1,96 @@
+@{
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var kind = Context.Request.Query["kind"].ToString();
+    var role = User.IsInRole("Admin") ? "Administrator" : User.IsInRole("Manager") ? "Sales manager" : "Sales executive";
+    var name = User.Identity?.Name ?? "Account";
+    var initial = name.Length > 0 ? name[..1].ToUpperInvariant() : "A";
+    var navigation = new[] {
+        ("Dashboard", "Dashboard", "", "overview"),
+        ("Customers", "Crm", "customers", "people"),
+        ("Leads", "Crm", "leads", "spark"),
+        ("Opportunities", "Crm", "opportunities", "chart"),
+        ("Follow-ups", "Crm", "followups", "calendar"),
+        ("Activities", "Crm", "activities", "check"),
+        ("Reports", "Reports", "", "report")
+    };
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#122438" />
+    <title>@ViewData["Title"] · AcxiomCRM</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%230e9287'/%3E%3Cpath d='m10 29 10-19 10 19h-6l-4-9-4 9' fill='white'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="~/lib/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+@if (signedIn)
+{
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+        <a class="brand" asp-controller="Dashboard" asp-action="Index"><span class="brand-mark">A</span><span>Acxiom<span class="brand-light">CRM</span><small>SALES WORKSPACE</small></span></a>
+        <div class="sidebar-label">WORKSPACE</div>
+        <nav class="nav flex-column">
+        @foreach (var item in navigation)
+        {
+            var active = controller == item.Item2 && (item.Item2 != "Crm" || kind == item.Item3);
+            <a class="nav-link @(active ? "active" : "")" asp-controller="@item.Item2" asp-action="Index" asp-route-kind="@(string.IsNullOrEmpty(item.Item3) ? null : item.Item3)" aria-current="@(active ? "page" : null)"><partial name="_Icon" model="@item.Item4" /><span>@item.Item1</span>@if(active){<span class="nav-indicator"></span>}</a>
+        }
+        </nav>
+        @if (User.IsInRole("Admin"))
+        {
+            <div class="sidebar-label mt-4">ADMINISTRATION</div>
+            <nav class="nav flex-column">
+                <a class="nav-link @(controller == "Users" ? "active" : "")" asp-controller="Users" asp-action="Index"><partial name="_Icon" model='@("shield")' /><span>Users & roles</span></a>
+                <a class="nav-link @(controller == "Audit" ? "active" : "")" asp-controller="Audit" asp-action="Index"><partial name="_Icon" model='@("history")' /><span>Audit log</span></a>
+            </nav>
+        }
+        <div class="sidebar-bottom"><span class="status-dot"></span> Secure workspace<div>@role access</div></div>
+    </aside>
+    <div class="app-shell">
+        <header class="topbar">
+            <button type="button" class="btn sidebar-toggle" aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="false"><partial name="_Icon" model='@("menu")' /></button>
+            <div class="breadcrumb-label">Workspace <span>/</span> <strong>@(ViewData["Title"] ?? "Overview")</strong></div>
+            <form class="header-search" asp-controller="Crm" asp-action="Index" method="get"><input type="hidden" name="kind" value="customers" /><label class="visually-hidden" for="global-search">Search customers</label><partial name="_Icon" model='@("search")' /><input id="global-search" name="q" placeholder="Search customers…" maxlength="100" /></form>
+            <a class="header-icon" asp-controller="Crm" asp-action="Index" asp-route-kind="followups" title="Follow-up schedule" aria-label="Open follow-up schedule"><partial name="_Icon" model='@("calendar")' /></a>
+            <div class="dropdown">
+                <button class="account-button dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"><span class="avatar">@initial</span><span class="account-label">@name<small>@role</small></span></button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Change password</a></li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li><form asp-controller="Account" asp-action="Logout" method="post"><button type="submit" class="dropdown-item text-danger">Sign out</button></form></li>
+                </ul>
+            </div>
+        </header>
+        <main id="main-content" class="main-content" tabindex="-1">
+            <partial name="_Alerts" />
+            @RenderBody()
+        </main>
+        <footer class="app-footer"><span>AcxiomCRM <span class="footer-dot">·</span> A clearer view of every customer.</span><span>CRM workspace</span></footer>
+    </div>
+}
+else
+{
+    <main id="main-content" class="auth-page" tabindex="-1">
+        <a class="brand auth-brand" asp-controller="Dashboard" asp-action="Index"><span class="brand-mark">A</span><span>Acxiom<span class="brand-light">CRM</span><small>SALES WORKSPACE</small></span></a>
+        <div class="auth-content"><partial name="_Alerts" />@RenderBody()</div>
+        <p class="auth-footer">Connect with customers. Move opportunities forward.</p>
+    </main>
+}
+<script src="~/lib/jquery.min.js"></script>
+<script src="~/lib/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelector('.sidebar-toggle')?.addEventListener('click', function () {
+    const open = document.body.classList.toggle('sidebar-open'); this.setAttribute('aria-expanded', String(open));
+});
+document.querySelectorAll('form[data-confirm]').forEach(form => form.addEventListener('submit', event => {
+    if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+}));
+</script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

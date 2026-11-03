@@ -1,0 +1,64 @@
+@model AcxiomCRM.ViewModels.CrmListModel
+@using AcxiomCRM.ViewModels
+@{
+    ViewData["Title"] = CrmUi.Title(Model.Kind);
+    var customers = Model.Customers.ToDictionary(x => x.Id, CrmUi.Label);
+    string PageUrl(int page) => Url.Action("Index", new { kind = Model.Kind, q = Model.Filter.Q, status = Model.Filter.Status, ownerId = Model.Filter.OwnerId, stage = Model.Filter.Stage, type = Model.Filter.Type, from = Model.Filter.From?.ToString("yyyy-MM-dd"), to = Model.Filter.To?.ToString("yyyy-MM-dd"), sort = Model.Filter.Sort, page, pageSize = Model.Filter.PageSize, overdue = Model.Filter.Overdue, customerId = Model.Filter.CustomerId, leadId = Model.Filter.LeadId }) ?? "#";
+}
+<div class="page-header d-flex justify-content-between align-items-start gap-3 flex-wrap">
+    <div><div class="text-muted small text-uppercase mb-1">Workspace / Sales operations</div><h1>@CrmUi.Title(Model.Kind)</h1><p class="text-muted mb-0">@Model.Total records in your authorized workspace.</p></div>
+    <a class="btn btn-primary" asp-action="Create" asp-route-kind="@Model.Kind">+ New @CrmUi.Singular(Model.Kind)</a>
+</div>
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="Index" class="row g-3 align-items-end" role="search">
+            <input type="hidden" name="kind" value="@Model.Kind" />
+            <div class="col-lg-4 col-md-6"><label for="q" class="form-label">Search</label><input id="q" name="q" value="@Model.Filter.Q" class="form-control" placeholder="Name, company, contact or customer" maxlength="200" /></div>
+            <div class="col-lg-2 col-md-3"><label for="status" class="form-label">Status</label><select id="status" name="status" class="form-select"><option value="">All statuses</option>@foreach(var status in CrmUi.Statuses(Model.Kind)){<option value="@status" selected="@(Model.Filter.Status == status)">@status</option>}</select></div>
+            <div class="col-lg-3 col-md-3"><label for="ownerId" class="form-label">Assigned owner</label><select id="ownerId" name="ownerId" class="form-select"><option value="">All permitted owners</option>@foreach(var owner in Model.Owners){<option value="@owner.Id" selected="@(Model.Filter.OwnerId == owner.Id)">@owner.Name</option>}</select></div>
+            <div class="col-lg-3 col-md-4"><label for="sort" class="form-label">Sort by</label><select id="sort" name="sort" class="form-select">@foreach(var sort in new Dictionary<string,string>{{"newest","Newest first"},{"name","Name A-Z"},{"name_desc","Name Z-A"},{"date","Date, earliest first"},{"status","Status"},{"amount","Value, highest first"}}){<option value="@sort.Key" selected="@(Model.Filter.Sort == sort.Key)">@sort.Value</option>}</select></div>
+            @if(Model.Kind == "opportunities"){
+                <div class="col-md-3"><label for="stage" class="form-label">Pipeline stage</label><select id="stage" name="stage" class="form-select"><option value="">All stages</option>@foreach(var stage in CrmUi.Stages){<option selected="@(Model.Filter.Stage == stage)">@stage</option>}</select></div>
+            }
+            @if(Model.Kind is "followups" or "activities"){
+                <div class="col-md-3"><label for="type" class="form-label">Activity type</label><select id="type" name="type" class="form-select"><option value="">All types</option>@foreach(var type in CrmUi.Types){<option selected="@(Model.Filter.Type == type)">@type</option>}</select></div>
+            }
+            @if(Model.Kind is "followups" or "activities" or "opportunities"){
+                <div class="col-md-3"><label for="customerId" class="form-label">Related customer</label><select id="customerId" name="customerId" class="form-select"><option value="">All customers</option>@foreach(var c in Model.Customers){<option value="@c.Id" selected="@(Model.Filter.CustomerId == c.Id)">@CrmUi.Label(c)</option>}</select></div>
+            }
+            @if(Model.Kind is "followups" or "activities"){
+                <div class="col-md-3"><label for="leadId" class="form-label">Related lead</label><select id="leadId" name="leadId" class="form-select"><option value="">All leads</option>@foreach(var l in Model.Leads){<option value="@l.Id" selected="@(Model.Filter.LeadId == l.Id)">@CrmUi.Label(l)</option>}</select></div>
+            }
+            <div class="col-md-3"><label for="from" class="form-label">@(Model.Kind == "followups" ? "Due" : Model.Kind == "opportunities" ? "Close" : Model.Kind == "activities" ? "Activity" : "Created") from</label><input id="from" name="from" type="date" class="form-control" value="@Model.Filter.From?.ToString("yyyy-MM-dd")" /></div>
+            <div class="col-md-3"><label for="to" class="form-label">To</label><input id="to" name="to" type="date" class="form-control" value="@Model.Filter.To?.ToString("yyyy-MM-dd")" /></div>
+            <div class="col-md-2"><label for="pageSize" class="form-label">Per page</label><select id="pageSize" name="pageSize" class="form-select">@foreach(var size in new[]{10,25,50,100}){<option selected="@(Model.Filter.PageSize == size)">@size</option>}</select></div>
+            @if(Model.Kind == "followups"){
+                <div class="col-md-3"><div class="form-check mb-2"><input id="overdue" name="overdue" value="true" type="checkbox" class="form-check-input" checked="@Model.Filter.Overdue" /><label for="overdue" class="form-check-label">Overdue planned only</label></div></div>
+            }
+            <div class="col-auto d-flex gap-2"><button class="btn btn-primary" type="submit">Apply filters</button><a class="btn btn-outline-secondary" asp-action="Index" asp-route-kind="@Model.Kind">Reset</a></div>
+        </form>
+    </div>
+</div>
+<div class="card overflow-hidden">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th scope="col">@(Model.Kind is "activities" or "followups" ? "Subject" : "Name")</th><th scope="col">@(Model.Kind is "customers" or "leads" ? "Contact" : "Related customer")</th><th scope="col">Status</th><th scope="col">@(Model.Kind == "opportunities" ? "Value / probability" : Model.Kind == "leads" ? "Expected value" : Model.Kind is "activities" or "followups" ? "Type" : "Company")</th><th scope="col">Owner</th><th scope="col">@(Model.Kind == "followups" ? "Due date" : Model.Kind == "opportunities" ? "Expected close" : Model.Kind == "activities" ? "Activity date" : "Created")</th><th scope="col" class="text-end">Actions</th></tr></thead>
+            <tbody>
+            @if(Model.Items.Count == 0){<tr><td colspan="7"><div class="text-center py-5"><h3 class="h5">No matching @CrmUi.Title(Model.Kind).ToLowerInvariant()</h3><p class="text-muted">Adjust the filters or create your first @CrmUi.Singular(Model.Kind).</p><a class="btn btn-outline-primary" asp-action="Create" asp-route-kind="@Model.Kind">Create @CrmUi.Singular(Model.Kind)</a></div></td></tr>}
+            @foreach(var row in Model.Items){
+                var overdue = Model.Kind == "followups" && row.Status == "Planned" && row.FollowUpDate?.Date < DateTime.Today;
+                <tr>
+                    <td><a class="fw-semibold text-decoration-none" asp-action="Details" asp-route-kind="@Model.Kind" asp-route-id="@row.Id">@CrmUi.Label(row)</a><div class="small text-muted">@(string.IsNullOrEmpty(row.Code) ? "#" + row.Id : row.Code)@(Model.Kind == "opportunities" ? " · " + row.Stage : "")</div></td>
+                    <td>@if(Model.Kind is "customers" or "leads"){<div>@row.Email</div><div class="small text-muted">@row.Phone</div>}else{<span>@(row.CustomerId.HasValue ? customers.GetValueOrDefault(row.CustomerId.Value,"—") : "—")</span>}</td>
+                    <td><span class="badge rounded-pill @CrmUi.Badge(row.Status)">@row.Status</span>@if(overdue){<div class="small text-danger mt-1">Overdue</div>}</td>
+                    <td>@if(Model.Kind == "opportunities"){<div class="fw-semibold">₹@row.Amount.ToString("N2")</div><div class="small text-muted">@row.Probability% probability</div>}else if(Model.Kind == "leads"){<span>₹@row.ExpectedValue.ToString("N2")</span>}else if(Model.Kind is "followups" or "activities"){<span>@row.Type</span>}else{<span>@row.CompanyName</span>}</td>
+                    <td><span class="small">@row.OwnerName</span></td>
+                    <td class="text-nowrap @(overdue ? "text-danger" : "")">@CrmUi.Date(row, Model.Kind).ToString("dd MMM yyyy")</td>
+                    <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-secondary" asp-action="Details" asp-route-kind="@Model.Kind" asp-route-id="@row.Id">View</a> @if(!(Model.Kind == "leads" && row.Status == "Converted")){<a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-kind="@Model.Kind" asp-route-id="@row.Id">Edit</a>}</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center gap-3 flex-wrap py-3"><span class="small text-muted">Showing @(Model.Total == 0 ? 0 : (Model.Filter.Page - 1) * Model.Filter.PageSize + 1)–@Math.Min(Model.Filter.Page * Model.Filter.PageSize, Model.Total) of @Model.Total</span><nav aria-label="Records pagination" class="d-flex align-items-center gap-3"><a class="btn btn-sm btn-outline-secondary @(Model.Filter.Page <= 1 ? "disabled" : "")" aria-disabled="@(Model.Filter.Page <= 1 ? "true" : "false")" href="@PageUrl(Model.Filter.Page - 1)">Previous</a><span class="small">Page @Model.Filter.Page of @Model.Pages</span><a class="btn btn-sm btn-outline-secondary @(Model.Filter.Page >= Model.Pages ? "disabled" : "")" aria-disabled="@(Model.Filter.Page >= Model.Pages ? "true" : "false")" href="@PageUrl(Model.Filter.Page + 1)">Next</a></nav></div>
+</div>

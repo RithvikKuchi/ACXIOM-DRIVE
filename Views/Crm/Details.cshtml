@@ -1,0 +1,77 @@
+@model AcxiomCRM.ViewModels.CrmDetailsModel
+@using AcxiomCRM.ViewModels
+@{
+    var row = Model.Item;
+    ViewData["Title"] = CrmUi.Label(row);
+    var contact = Model.Kind is "customers" or "leads";
+    var converted = Model.Kind == "leads" && row.Status == "Converted";
+}
+<div class="page-header d-flex justify-content-between align-items-start gap-3 flex-wrap">
+    <div><a class="small text-decoration-none" asp-action="Index" asp-route-kind="@Model.Kind">← @CrmUi.Title(Model.Kind)</a><h1 class="mt-3">@CrmUi.Label(row)</h1><div class="d-flex gap-2 align-items-center"><span class="badge rounded-pill @CrmUi.Badge(row.Status)">@row.Status</span><span class="text-muted small">@(string.IsNullOrEmpty(row.Code) ? "Record #" + row.Id : row.Code)</span></div></div>
+    <div class="d-flex flex-wrap gap-2">
+        @if(!converted){<a class="btn btn-primary" asp-action="Edit" asp-route-kind="@Model.Kind" asp-route-id="@row.Id">Edit @CrmUi.Singular(Model.Kind)</a><a class="btn btn-outline-danger" asp-action="Delete" asp-route-kind="@Model.Kind" asp-route-id="@row.Id">Delete</a>}
+        @if(Model.Kind == "leads" && row.Status == "Qualified"){
+            <form method="post" asp-action="Convert" asp-route-id="@row.Id"><button class="btn btn-success" type="submit">Convert to customer</button></form>
+        }
+        @if(Model.Kind is "followups" or "activities" && row.Status is "Planned" or "Missed"){
+            <form method="post" asp-action="Complete" asp-route-kind="@Model.Kind" asp-route-id="@row.Id"><button class="btn btn-success" type="submit">Mark completed</button></form>
+        }
+    </div>
+</div>
+@if(Model.Kind == "followups" && row.Status == "Planned" && row.FollowUpDate?.Date < DateTime.Today){<div class="alert alert-warning">This follow-up is overdue. Complete it or edit the date to reschedule.</div>}
+@if(converted && row.CustomerId.HasValue){<div class="alert alert-success">This lead has been converted. <a class="alert-link" asp-action="Details" asp-route-kind="customers" asp-route-id="@row.CustomerId">Open customer record →</a></div>}
+<div class="row g-4">
+    <div class="col-xl-8">
+        <section class="card mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">Record details</h2><dl class="row mb-0">
+            <dt class="col-sm-4 text-muted fw-normal">Assigned owner</dt><dd class="col-sm-8">@row.OwnerName</dd>
+            @if(contact){
+                <dt class="col-sm-4 text-muted fw-normal">Email</dt><dd class="col-sm-8">@row.Email</dd>
+                <dt class="col-sm-4 text-muted fw-normal">Phone</dt><dd class="col-sm-8">@row.Phone</dd>
+                <dt class="col-sm-4 text-muted fw-normal">Company</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(row.CompanyName) ? "—" : row.CompanyName)</dd>
+            }
+            @if(Model.Kind == "customers"){
+                <dt class="col-sm-4 text-muted fw-normal">Address</dt><dd class="col-sm-8">@row.Address<br />@row.City @row.State</dd>
+            }
+            @if(Model.Kind == "leads"){
+                <dt class="col-sm-4 text-muted fw-normal">Expected value</dt><dd class="col-sm-8 fw-semibold">₹@row.ExpectedValue.ToString("N2")</dd>
+                <dt class="col-sm-4 text-muted fw-normal">Priority</dt><dd class="col-sm-8">@row.Priority</dd>
+            }
+            @if(Model.Kind is "leads" or "opportunities"){
+                <dt class="col-sm-4 text-muted fw-normal">Source</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(row.Source) ? "—" : row.Source)</dd>
+            }
+            @if(Model.Kind == "opportunities"){
+                <dt class="col-sm-4 text-muted fw-normal">Stage</dt><dd class="col-sm-8">@row.Stage</dd>
+                <dt class="col-sm-4 text-muted fw-normal">Amount</dt><dd class="col-sm-8 fw-semibold">₹@row.Amount.ToString("N2")</dd>
+                <dt class="col-sm-4 text-muted fw-normal">Probability</dt><dd class="col-sm-8">@row.Probability%</dd>
+                <dt class="col-sm-4 text-muted fw-normal">Weighted amount</dt><dd class="col-sm-8">₹@((row.Amount * row.Probability / 100).ToString("N2"))</dd>
+                <dt class="col-sm-4 text-muted fw-normal">Expected close</dt><dd class="col-sm-8">@row.ExpectedCloseDate?.ToString("dd MMM yyyy")</dd>
+            }
+            @if(Model.Kind is "followups" or "activities"){
+                <dt class="col-sm-4 text-muted fw-normal">Type</dt><dd class="col-sm-8">@row.Type</dd>
+                <dt class="col-sm-4 text-muted fw-normal">@(Model.Kind == "followups" ? "Follow-up date" : "Activity date")</dt><dd class="col-sm-8">@(Model.Kind == "followups" ? row.FollowUpDate?.ToString("dd MMM yyyy") : row.ActivityDate?.ToString("dd MMM yyyy"))</dd>
+            }
+            @if(row.CustomerId.HasValue && Model.CustomerNames.ContainsKey(row.CustomerId.Value)){
+                <dt class="col-sm-4 text-muted fw-normal">Customer</dt><dd class="col-sm-8"><a asp-action="Details" asp-route-kind="customers" asp-route-id="@row.CustomerId">@Model.CustomerNames[row.CustomerId.Value]</a></dd>
+            }
+            @if(row.LeadId.HasValue && Model.LeadNames.ContainsKey(row.LeadId.Value)){
+                <dt class="col-sm-4 text-muted fw-normal">Lead</dt><dd class="col-sm-8"><a asp-action="Details" asp-route-kind="leads" asp-route-id="@row.LeadId">@Model.LeadNames[row.LeadId.Value]</a></dd>
+            }
+            @if(row.OpportunityId.HasValue){<dt class="col-sm-4 text-muted fw-normal">Opportunity</dt><dd class="col-sm-8"><a asp-action="Details" asp-route-kind="opportunities" asp-route-id="@row.OpportunityId">Opportunity #@row.OpportunityId</a></dd>}
+            <dt class="col-sm-4 text-muted fw-normal">Created</dt><dd class="col-sm-8">@row.CreatedDate.ToString("dd MMM yyyy, HH:mm") UTC</dd>
+            <dt class="col-sm-4 text-muted fw-normal">Last updated</dt><dd class="col-sm-8">@(row.ModifiedDate?.ToString("dd MMM yyyy, HH:mm") ?? "Not edited")@(row.ModifiedDate.HasValue ? " UTC" : "")</dd>
+        </dl></div></section>
+        @if(!string.IsNullOrWhiteSpace(row.Notes) || !string.IsNullOrWhiteSpace(row.Description)){
+            <section class="card mb-4"><div class="card-body p-4"><h2 class="h5 mb-3">Notes &amp; context</h2>@if(!string.IsNullOrWhiteSpace(row.Description)){<p style="white-space:pre-wrap">@row.Description</p>}<p class="mb-0" style="white-space:pre-wrap">@row.Notes</p></div></section>
+        }
+        @if(Model.Kind is "customers" or "leads" or "opportunities"){
+            <section class="card mb-4"><div class="card-header bg-white d-flex justify-content-between align-items-center py-3"><h2 class="h5 mb-0">Follow-ups</h2><a class="btn btn-sm btn-outline-primary" asp-action="Create" asp-route-kind="followups" asp-route-customerId="@(Model.Kind == "customers" ? row.Id : (int?)null)" asp-route-leadId="@(Model.Kind == "leads" ? row.Id : (int?)null)" asp-route-opportunityId="@(Model.Kind == "opportunities" ? row.Id : (int?)null)">+ Schedule</a></div><div class="list-group list-group-flush">@if(Model.FollowUps.Count == 0){<div class="p-4 text-muted">No follow-ups scheduled yet.</div>}@foreach(var item in Model.FollowUps){<a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-3 py-3" asp-action="Details" asp-route-kind="followups" asp-route-id="@item.Id"><div class="fw-semibold">@item.Subject<div class="text-muted small fw-normal">@item.FollowUpDate?.ToString("dd MMM yyyy") · @item.Type · @item.OwnerName</div></div><span class="badge rounded-pill @CrmUi.Badge(item.Status)">@item.Status</span></a>}</div></section>
+            <section class="card mb-4"><div class="card-header bg-white d-flex justify-content-between align-items-center py-3"><h2 class="h5 mb-0">Related activities</h2><a class="btn btn-sm btn-outline-primary" asp-action="Create" asp-route-kind="activities" asp-route-customerId="@(Model.Kind == "customers" ? row.Id : (int?)null)" asp-route-leadId="@(Model.Kind == "leads" ? row.Id : (int?)null)" asp-route-opportunityId="@(Model.Kind == "opportunities" ? row.Id : (int?)null)">+ Add activity</a></div><div class="list-group list-group-flush">@if(Model.Activities.Count == 0){<div class="p-4 text-muted">Calls, meetings, emails and tasks appear here.</div>}@foreach(var item in Model.Activities){<a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-3 py-3" asp-action="Details" asp-route-kind="activities" asp-route-id="@item.Id"><div class="fw-semibold">@item.Subject<div class="text-muted small fw-normal">@item.ActivityDate?.ToString("dd MMM yyyy") · @item.Type</div></div><span class="badge rounded-pill @CrmUi.Badge(item.Status)">@item.Status</span></a>}</div></section>
+        }
+    </div>
+    <div class="col-xl-4">
+        @if(Model.Kind == "customers"){
+            <section class="card mb-4"><div class="card-body p-4"><h2 class="h5">Next sales step</h2><p class="text-muted">Track the value and progress of a potential deal for this customer.</p><a class="btn btn-primary w-100" asp-action="Create" asp-route-kind="opportunities" asp-route-customerId="@row.Id">+ Create opportunity</a></div></section>
+        }
+        <section class="card"><div class="card-body p-4"><h2 class="h5 mb-4">Record history</h2>@if(Model.History.Count == 0){<p class="text-muted mb-0">No recorded changes yet.</p>}@foreach(var entry in Model.History){<div class="border-start border-3 ps-3 pb-4"><div class="fw-semibold">@entry.Action</div><div class="small text-muted">@entry.CreatedDate.ToString("dd MMM yyyy, HH:mm") UTC</div><span class="small text-muted">@entry.Result</span></div>}</div></section>
+    </div>
+</div>

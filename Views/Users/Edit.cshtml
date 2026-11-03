@@ -1,0 +1,13 @@
+@model AcxiomCRM.ViewModels.UserEditViewModel
+@{ var create = string.IsNullOrEmpty(Model.Id); ViewData["Title"] = create ? "Add user" : "Edit user"; }
+<div class="row"><div class="col-xl-7"><div class="card p-4"><h1 class="h4">@ViewData["Title"]</h1><p class="text-muted">Each user has one primary role. At least one active administrator must remain.</p>
+<form asp-action="Save" method="post"><input asp-for="Id" type="hidden" />
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+<div class="mb-3"><label asp-for="Name" class="form-label"></label><input asp-for="Name" class="form-control" /><span asp-validation-for="Name" class="text-danger small"></span></div>
+<div class="mb-3"><label asp-for="Email" class="form-label"></label><input asp-for="Email" class="form-control" /><span asp-validation-for="Email" class="text-danger small"></span></div>
+<div class="mb-3"><label asp-for="Role" class="form-label"></label><select asp-for="Role" class="form-select"><option value="Admin">Admin</option><option value="Manager">Manager</option><option value="SalesExecutive">Sales Executive</option></select><span asp-validation-for="Role" class="text-danger small"></span></div>
+@if(create) { <div class="mb-3"><label asp-for="Password" class="form-label"></label><input asp-for="Password" class="form-control" autocomplete="new-password" required /><span asp-validation-for="Password" class="text-danger small"></span><div class="form-text">At least 10 characters, including uppercase, lowercase, a number and a symbol.</div></div> }
+<div class="form-check mb-4"><input asp-for="IsActive" class="form-check-input" /><label asp-for="IsActive" class="form-check-label">Active account</label></div>
+<button class="btn btn-primary" type="submit">Save user</button><a asp-action="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form></div></div></div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

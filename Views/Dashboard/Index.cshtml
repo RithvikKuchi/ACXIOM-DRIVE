@@ -1,0 +1,67 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var inr = CultureInfo.GetCultureInfo("en-IN");
+    var cards = new[] {
+        ("Total customers", Model.TotalCustomers.ToString("N0"), "people", "teal"),
+        ("Total leads", Model.TotalLeads.ToString("N0"), "spark", "blue"),
+        ("Open leads", Model.OpenLeads.ToString("N0"), "spark", "amber"),
+        ("Total opportunities", Model.TotalOpportunities.ToString("N0"), "chart", "violet"),
+        ("Open opportunities", Model.OpenOpportunities.ToString("N0"), "chart", "blue"),
+        ("Won opportunities", Model.WonOpportunities.ToString("N0"), "check", "teal"),
+        ("Lost opportunities", Model.LostOpportunities.ToString("N0"), "history", "rose"),
+        ("Total pipeline", "₹" + Model.Pipeline.ToString("N0", inr), "chart", "teal")
+    };
+}
+<div class="page-header">
+    <div><div class="eyebrow">YOUR SALES AT A GLANCE</div><h1>Dashboard</h1><p>Keep your customer relationships moving forward.</p></div>
+    <a class="btn btn-primary" asp-controller="Crm" asp-action="Create" asp-route-kind="leads"><partial name="_Icon" model='@("plus")' /> New lead</a>
+</div>
+<div class="dashboard-toolbar">
+    <div class="scope-label"><span class="status-dot"></span>@Model.Scope</div>
+    <form method="get" class="date-filter">
+        <label for="period" class="visually-hidden">Date period</label>
+        <select name="period" id="period" class="form-select form-select-sm">
+            <option value="all" selected="@(Model.Period == "all")">All time</option><option value="today" selected="@(Model.Period == "today")">Today</option><option value="week" selected="@(Model.Period == "week")">This week</option><option value="month" selected="@(Model.Period == "month")">This month</option><option value="custom" selected="@(Model.Period == "custom")">Custom range</option>
+        </select>
+        <label for="from" class="visually-hidden">From date</label><input type="date" id="from" name="from" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+        <span class="text-muted">to</span><label for="to" class="visually-hidden">To date</label><input type="date" id="to" name="to" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+        <button class="btn btn-outline-secondary btn-sm" type="submit">Apply</button>
+    </form>
+</div>
+<div asp-validation-summary="All" class="text-danger"></div>
+<div class="kpi-grid">
+@foreach (var card in cards)
+{
+    <div class="kpi-card"><div class="kpi-top"><span>@card.Item1</span><span class="kpi-icon @card.Item4"><partial name="_Icon" model="@card.Item3" /></span></div><div class="kpi-value">@card.Item2</div><div class="kpi-caption">@(card.Item1 == "Total pipeline" ? "Open opportunity value" : "Within selected period")</div></div>
+}
+</div>
+<div class="insight-strip"><div><span class="insight-icon">↗</span><strong>₹@Model.WeightedPipeline.ToString("N0", inr)</strong><span>weighted pipeline</span></div><span class="strip-divider"></span><div><strong>@Model.PendingFollowUps</strong><span>pending follow-ups</span></div><span class="strip-divider"></span><div><strong class="@(Model.OverdueFollowUps > 0 ? "text-danger" : "")">@Model.OverdueFollowUps</strong><span>overdue</span></div><a asp-controller="Crm" asp-action="Index" asp-route-kind="followups">View schedule <partial name="_Icon" model='@("arrow")' /></a></div>
+<div class="charts-grid">
+    <section class="card chart-card"><div class="card-heading"><div><h2>Opportunity pipeline</h2><p>Value across each sales stage</p></div><span class="subtle-tag">INR</span></div><div class="chart-container"><canvas id="pipeline-chart" aria-label="Opportunity amount by stage" role="img"></canvas></div></section>
+    <section class="card chart-card"><div class="card-heading"><div><h2>Lead status</h2><p>A snapshot of your lead lifecycle</p></div><span class="subtle-tag">@Model.TotalLeads total</span></div><div class="chart-container"><canvas id="leads-chart" aria-label="Lead counts by status" role="img"></canvas></div></section>
+</div>
+<div class="lower-grid">
+    <section class="card chart-card"><div class="card-heading"><div><h2>Monthly sales outcomes</h2><p>Won and lost value by outcome month · last six months</p></div></div><div class="chart-container"><canvas id="monthly-chart" aria-label="Won and lost opportunity amounts per month" role="img"></canvas></div></section>
+    <section class="card followup-card"><div class="card-heading"><div><h2>Follow-ups to focus on</h2><p>Next actions, including overdue tasks</p></div><a asp-controller="Crm" asp-action="Create" asp-route-kind="followups" class="icon-link" aria-label="Schedule follow-up"><partial name="_Icon" model='@("plus")' /></a></div>
+    @if (Model.Upcoming.Count == 0) { <div class="empty-state"><span class="empty-icon">✓</span><h3>You're all caught up</h3><p>Schedule a follow-up to keep the conversation going.</p></div> }
+    @foreach (var item in Model.Upcoming)
+    {
+        var overdue = item.FollowUpDate?.Date < DateTime.Today;
+        <a class="followup-item" asp-controller="Crm" asp-action="Details" asp-route-kind="followups" asp-route-id="@item.Id"><span class="followup-date @(overdue ? "overdue" : "")"><strong>@item.FollowUpDate?.ToString("dd")</strong><small>@item.FollowUpDate?.ToString("MMM")</small></span><span class="followup-copy"><strong>@item.Subject</strong><small>@item.Type · @item.OwnerName</small></span><span class="badge @(overdue ? "badge-soft-danger" : "badge-soft-primary")">@(overdue ? "Overdue" : "Planned")</span></a>
+    }
+    </section>
+</div>
+<section class="card recent-card"><div class="card-heading"><div><h2>Recent leads</h2><p>The newest conversations in your pipeline</p></div><a asp-controller="Crm" asp-action="Index" asp-route-kind="leads" class="text-link">View all leads <partial name="_Icon" model='@("arrow")' /></a></div><div class="table-responsive"><table class="table"><thead><tr><th>Lead</th><th>Company</th><th>Source</th><th>Status</th><th>Owner</th><th>Expected value</th></tr></thead><tbody>
+@foreach (var item in Model.RecentLeads)
+{<tr><td><a class="record-link" asp-controller="Crm" asp-action="Details" asp-route-kind="leads" asp-route-id="@item.Id">@item.Name</a><small class="cell-subtitle">@item.Email</small></td><td>@item.CompanyName</td><td>@item.Source</td><td><span class="badge badge-soft-primary">@item.Status</span></td><td>@item.OwnerName</td><td class="font-numeric">₹@item.ExpectedValue.ToString("N0", inr)</td></tr>}
+@if(Model.RecentLeads.Count == 0){<tr><td colspan="6" class="empty-table">No leads in this period. Create your first lead to get started.</td></tr>}
+</tbody></table></div></section>
+@if (User.IsInRole("Admin"))
+{<div class="admin-summary"><partial name="_Icon" model='@("shield")' /><span><strong>@Model.ActiveUsers</strong> active users</span><span>·</span><span><strong>@Model.SecurityEventsToday</strong> authentication / user events today (UTC)</span><a asp-controller="Audit" asp-action="Index">Review audit log</a></div>}
+<p class="report-note">Cards and charts use records created in the selected period. Follow-up reminders show all pending work. Amounts are in INR.</p>
+<script id="dashboard-data" type="application/json">@Html.Raw(Model.ChartJson)</script>
+@section Scripts {
+    <script src="~/lib/chart.umd.js"></script>
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+}

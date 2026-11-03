@@ -1,0 +1,79 @@
+@model AcxiomCRM.ViewModels.CrmFormModel
+@using AcxiomCRM.ViewModels
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var isCreate = !Model.Id.HasValue;
+    var isContact = Model.Kind is "customers" or "leads";
+    var isActivity = Model.Kind is "followups" or "activities";
+    var action = isCreate ? "Create" : "Edit";
+    var title = (isCreate ? "New " : "Edit ") + CrmUi.Singular(Model.Kind);
+    ViewData["Title"] = title;
+}
+<div class="page-header"><a class="small text-decoration-none" asp-action="Index" asp-route-kind="@Model.Kind">← Back to @CrmUi.Title(Model.Kind).ToLowerInvariant()</a><h1 class="mt-3">@title</h1><p class="text-muted">Keep your sales workspace accurate. Fields marked * are required.</p></div>
+<form asp-action="@action" asp-route-kind="@Model.Kind" asp-route-id="@Model.Id" method="post" id="crm-form" data-kind="@Model.Kind" data-create="@isCreate.ToString().ToLowerInvariant()" data-today="@DateTime.Today.ToString("yyyy-MM-dd")">
+    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <section class="card mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">@(isContact ? "Contact information" : isActivity ? "Activity information" : "Opportunity information")</h2><div class="row g-3">
+                @if(!isActivity){
+                    <div class="col-md-12"><label asp-for="Input.Name" class="form-label">@(Model.Kind == "opportunities" ? "Opportunity name" : "Name") *</label><input asp-for="Input.Name" class="form-control" maxlength="150" required data-val="true" data-val-required="Name is required." data-val-length="Name cannot exceed 150 characters." data-val-length-max="150" /><span asp-validation-for="Input.Name" class="text-danger small"></span></div>
+                }
+                @if(isContact){
+                    <div class="col-md-6"><label asp-for="Input.Email" class="form-label">Email *</label><input asp-for="Input.Email" type="email" class="form-control" maxlength="254" required data-val="true" data-val-required="Email is required." data-val-email="Enter a valid email address." autocomplete="email" /><span asp-validation-for="Input.Email" class="text-danger small"></span></div>
+                    <div class="col-md-6"><label asp-for="Input.Phone" class="form-label">Mobile number *</label><input asp-for="Input.Phone" class="form-control" type="tel" maxlength="10" minlength="10" pattern="[6-9][0-9]{9}" required data-val="true" data-val-required="Phone is required." data-val-regex="Enter a 10-digit Indian mobile number beginning with 6, 7, 8 or 9." data-val-regex-pattern="^[6-9][0-9]{9}$" autocomplete="tel-national" /><span asp-validation-for="Input.Phone" class="text-danger small"></span><div class="form-text">10 digits, starting with 6–9; no country prefix.</div></div>
+                    <div class="col-md-12"><label asp-for="Input.CompanyName" class="form-label">Company</label><input asp-for="Input.CompanyName" class="form-control" maxlength="150" /><span asp-validation-for="Input.CompanyName" class="text-danger small"></span></div>
+                }
+                @if(Model.Kind == "customers"){
+                    <div class="col-md-12"><label asp-for="Input.Address" class="form-label">Address</label><textarea asp-for="Input.Address" class="form-control" rows="2" maxlength="500"></textarea><span asp-validation-for="Input.Address" class="text-danger small"></span></div>
+                    <div class="col-md-6"><label asp-for="Input.City" class="form-label">City</label><input asp-for="Input.City" class="form-control" maxlength="80" /><span asp-validation-for="Input.City" class="text-danger small"></span></div>
+                    <div class="col-md-6"><label asp-for="Input.State" class="form-label">State</label><input asp-for="Input.State" class="form-control" maxlength="80" /><span asp-validation-for="Input.State" class="text-danger small"></span></div>
+                }
+                @if(Model.Kind == "leads"){
+                    <div class="col-md-6"><label asp-for="Input.ExpectedValue" class="form-label">Expected value (INR) *</label><input asp-for="Input.ExpectedValue" type="number" class="form-control" min="0" max="999999999.99" step="0.01" required data-val="true" data-val-required="Expected value is required." data-val-range="Expected value must be between 0 and 999999999.99." data-val-range-min="0" data-val-range-max="999999999.99" /><span asp-validation-for="Input.ExpectedValue" class="text-danger small"></span></div>
+                    <div class="col-md-6"><label asp-for="Input.Priority" class="form-label">Priority *</label><select asp-for="Input.Priority" class="form-select" asp-items="@(new SelectList(new[]{"Low","Medium","High"}))" required></select><span asp-validation-for="Input.Priority" class="text-danger small"></span></div>
+                }
+                @if(Model.Kind is "leads" or "opportunities"){
+                    <div class="col-md-12"><label asp-for="Input.Source" class="form-label">Source</label><input asp-for="Input.Source" class="form-control" maxlength="80" placeholder="Website, referral, event…" /><span asp-validation-for="Input.Source" class="text-danger small"></span></div>
+                }
+                @if(Model.Kind == "opportunities"){
+                    <div class="col-md-6"><label asp-for="Input.Amount" class="form-label">Amount (INR) *</label><input asp-for="Input.Amount" type="number" class="form-control" min="0.01" max="999999999.99" step="0.01" required data-val="true" data-val-required="Opportunity amount is required." data-val-range="Opportunity amount must be greater than 0 and at most 999999999.99." data-val-range-min="0.01" data-val-range-max="999999999.99" /><span asp-validation-for="Input.Amount" class="text-danger small"></span></div>
+                    <div class="col-md-6"><label asp-for="Input.Probability" class="form-label">Probability (%) *</label><input asp-for="Input.Probability" type="number" class="form-control" min="0" max="100" step="1" required data-val="true" data-val-required="Probability is required." data-val-range="Probability must be between 0 and 100." data-val-range-min="0" data-val-range-max="100" /><span asp-validation-for="Input.Probability" class="text-danger small"></span></div>
+                    <div class="col-md-6"><label asp-for="Input.Stage" class="form-label">Pipeline stage *</label><select asp-for="Input.Stage" class="form-select" asp-items="@(new SelectList(CrmUi.Stages))" required></select><span asp-validation-for="Input.Stage" class="text-danger small"></span></div>
+                    <div class="col-md-6"><label asp-for="Input.ExpectedCloseDate" class="form-label">Expected close date *</label><input asp-for="Input.ExpectedCloseDate" type="date" asp-format="{0:yyyy-MM-dd}" class="form-control" required min="@(Model.Input.Status == "Open" ? DateTime.Today.ToString("yyyy-MM-dd") : null)" /><span asp-validation-for="Input.ExpectedCloseDate" class="text-danger small"></span></div>
+                    <div class="col-12"><div class="alert alert-info mb-0">Weighted pipeline: <strong id="weighted-pipeline">₹@((Model.Input.Amount * Model.Input.Probability / 100).ToString("N2"))</strong><span class="small d-block mt-1">Stage and outcome are kept consistent when you save.</span></div></div>
+                }
+                @if(isActivity){
+                    <div class="col-md-12"><label asp-for="Input.Subject" class="form-label">Subject *</label><input asp-for="Input.Subject" class="form-control" maxlength="150" required data-val="true" data-val-required="Subject is required." /><span asp-validation-for="Input.Subject" class="text-danger small"></span></div>
+                    <div class="col-md-6"><label asp-for="Input.Type" class="form-label">Type *</label><select asp-for="Input.Type" class="form-select" asp-items="@(new SelectList(CrmUi.Types))" required></select><span asp-validation-for="Input.Type" class="text-danger small"></span></div>
+                    @if(Model.Kind == "followups"){
+                        <div class="col-md-6"><label asp-for="Input.FollowUpDate" class="form-label">Follow-up date *</label><input asp-for="Input.FollowUpDate" type="date" asp-format="{0:yyyy-MM-dd}" class="form-control" min="@(isCreate || Model.Input.Status == "Planned" ? DateTime.Today.ToString("yyyy-MM-dd") : null)" required /><span asp-validation-for="Input.FollowUpDate" class="text-danger small"></span></div>
+                    }else{
+                        <div class="col-md-6"><label asp-for="Input.ActivityDate" class="form-label">Activity date *</label><input asp-for="Input.ActivityDate" type="date" asp-format="{0:yyyy-MM-dd}" class="form-control" required /><span asp-validation-for="Input.ActivityDate" class="text-danger small"></span></div>
+                        <div class="col-md-12"><label asp-for="Input.Description" class="form-label">Description</label><textarea asp-for="Input.Description" class="form-control" rows="4" maxlength="2000"></textarea><span asp-validation-for="Input.Description" class="text-danger small"></span></div>
+                    }
+                }
+                <div class="col-md-12"><label asp-for="Input.Notes" class="form-label">@(Model.Kind == "followups" ? "Remarks / notes" : "Notes")</label><textarea asp-for="Input.Notes" class="form-control" rows="4" maxlength="2000" placeholder="Context, next steps or relevant details"></textarea><span asp-validation-for="Input.Notes" class="text-danger small"></span></div>
+            </div></div></section>
+        </div>
+        <div class="col-xl-4">
+            <section class="card mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">Ownership &amp; status</h2>
+                <div class="mb-3"><label asp-for="Input.OwnerId" class="form-label">Assigned owner *</label><select asp-for="Input.OwnerId" class="form-select" asp-items="@(new SelectList(Model.Owners,"Id","Name"))" required><option value="">Select owner</option></select><span asp-validation-for="Input.OwnerId" class="text-danger small"></span></div>
+                <div class="mb-3"><label asp-for="Input.Status" class="form-label">Status *</label><select asp-for="Input.Status" class="form-select" asp-items="@(new SelectList(CrmUi.EditableStatuses(Model.Kind, Model.OriginalStatus, isCreate)))" required></select><span asp-validation-for="Input.Status" class="text-danger small"></span></div>
+                @if(Model.Kind == "leads"){<p class="form-text">New → Contacted → Qualified → Convert. Only permitted next statuses are listed. Convert a qualified lead from its details page.</p>}
+                @if(Model.Kind == "opportunities"){<p class="form-text">Open opportunities need a future or current close date. Won and Lost stages record the corresponding final outcome.</p>}
+            </div></section>
+            @if(Model.Kind is "opportunities" or "followups" or "activities"){
+                <section class="card mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">Related records</h2>
+                    <div class="mb-3"><label asp-for="Input.CustomerId" class="form-label">Customer @(Model.Kind == "opportunities" ? "*" : "")</label><select asp-for="Input.CustomerId" class="form-select" asp-items="@(new SelectList(Model.Customers,"Id","Name"))" required="@(Model.Kind == "opportunities")"><option value="">Select customer</option></select><span asp-validation-for="Input.CustomerId" class="text-danger small"></span></div>
+                    <div class="mb-3"><label asp-for="Input.LeadId" class="form-label">Lead</label><select asp-for="Input.LeadId" class="form-select" asp-items="@(new SelectList(Model.Leads,"Id","Name"))"><option value="">Select lead (optional)</option></select><span asp-validation-for="Input.LeadId" class="text-danger small"></span></div>
+                    @if(isActivity){<div class="mb-3"><label asp-for="Input.OpportunityId" class="form-label">Opportunity</label><select asp-for="Input.OpportunityId" class="form-select" asp-items="@(new SelectList(Model.Opportunities,"Id","Name"))"><option value="">Select opportunity (optional)</option></select><span asp-validation-for="Input.OpportunityId" class="text-danger small"></span></div><p class="form-text">@(Model.Kind == "followups" ? "Link at least one customer, lead or opportunity." : "Link this activity to a CRM record, or leave these empty for a standalone task.")</p>}
+                </div></section>
+            }
+            <div class="d-grid gap-2"><button type="submit" class="btn btn-primary btn-lg">@(isCreate ? "Create " : "Save ")@CrmUi.Singular(Model.Kind)</button><a class="btn btn-outline-secondary" asp-action="Index" asp-route-kind="@Model.Kind">Cancel</a></div>
+        </div>
+    </div>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/crm.js" asp-append-version="true"></script>
+}
