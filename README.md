@@ -46,6 +46,7 @@ New registration always assigns `SalesExecutive`; a submitted role cannot grant 
 - [Evaluator demonstration guide](docs/DEMO_GUIDE.md)
 - [REST API reference and executable example](docs/API.md)
 - [Verification results](docs/TEST_RESULTS.md)
+- [Railway deployment setup](docs/RAILWAY.md)
 - [Third-party libraries and licenses](wwwroot/lib/THIRD_PARTY_NOTICES.md)
 
 ## Structure

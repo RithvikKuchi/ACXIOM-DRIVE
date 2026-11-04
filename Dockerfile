@@ -10,6 +10,6 @@ WORKDIR /app
 COPY --from=build /app/publish .
 RUN mkdir -p /app/App_Data && chown -R $APP_UID /app
 USER $APP_UID
-ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "AcxiomCRM.dll"]

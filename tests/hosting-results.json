@@ -1,0 +1,66 @@
+{
+  "passed": 15,
+  "total": 15,
+  "checks": [
+    {
+      "name": "Readiness accepts Railway internal HTTP hostname",
+      "passed": true
+    },
+    {
+      "name": "SQLite is stored on mounted volume",
+      "passed": true
+    },
+    {
+      "name": "Unknown Host is rejected",
+      "passed": true
+    },
+    {
+      "name": "Plain HTTP redirects to public HTTPS port 443",
+      "passed": true
+    },
+    {
+      "name": "Forwarded HTTPS renders login without redirect loop",
+      "passed": true
+    },
+    {
+      "name": "Production responses carry HSTS",
+      "passed": true
+    },
+    {
+      "name": "Public registration is disabled",
+      "passed": true
+    },
+    {
+      "name": "Anonymous CRM remains protected",
+      "passed": true
+    },
+    {
+      "name": "Configured production administrator can log in",
+      "passed": true
+    },
+    {
+      "name": "Production session is Secure and HttpOnly",
+      "passed": true
+    },
+    {
+      "name": "Authenticated session accesses CRM",
+      "passed": true
+    },
+    {
+      "name": "Development demo data is absent in production",
+      "passed": true
+    },
+    {
+      "name": "Data Protection keys are persisted",
+      "passed": true
+    },
+    {
+      "name": "Administrator and session survive restart without bootstrap secret",
+      "passed": true
+    },
+    {
+      "name": "Railway startup rejects missing persistent volume",
+      "passed": true
+    }
+  ]
+}

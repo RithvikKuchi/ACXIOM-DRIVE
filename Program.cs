@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var railwayHosting = RailwayHosting.Configure(builder);
 Directory.CreateDirectory(Path.Combine(builder.Environment.ContentRootPath, "App_Data"));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -94,6 +95,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+if (railwayHosting) app.UseForwardedHeaders();
 app.UseExceptionHandler(handler => handler.Run(async context =>
 {
     var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
@@ -129,6 +131,21 @@ app.UseStatusCodePages(async context =>
         };
         await context.HttpContext.Response.WriteAsJsonAsync(new { error = message, errors = new { } });
     }
+});
+// Railway readiness probes use internal HTTP and must not require a login or TLS redirect.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/healthz" && (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)))
+    {
+        context.Response.Headers.CacheControl = "no-store";
+        var ready = false;
+        try { ready = await context.RequestServices.GetRequiredService<ApplicationDbContext>().Database.CanConnectAsync(context.RequestAborted); }
+        catch { /* Return only readiness, never infrastructure details. */ }
+        context.Response.StatusCode = ready ? 200 : 503;
+        if (!HttpMethods.IsHead(context.Request.Method)) await context.Response.WriteAsJsonAsync(new { status = ready ? "ok" : "unavailable" });
+        return;
+    }
+    await next();
 });
 if (!app.Environment.IsDevelopment()) { app.UseHsts(); app.UseHttpsRedirection(); }
 app.Use(async (context, next) =>
