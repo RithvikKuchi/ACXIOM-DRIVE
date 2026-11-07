@@ -39,3 +39,57 @@ jobs:
         with:
           name: acceptance-results
           path: TestResults/*.json
+  verify-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: acxiom_acceptance
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci-only-password
+      PGDATABASE: acxiom_acceptance
+      TEST_POSTGRES_CONNECTION: Host=localhost;Port=5432;Database=acxiom_hosting;Username=postgres;Password=ci-only-password;SSL Mode=Disable
+      TEST_POSTGRES_DSN: host=localhost port=5432 dbname=acxiom_hosting user=postgres password=ci-only-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: dotnet build -c Release
+      - run: python -m pip install -r tests/requirements.txt "psycopg[binary]>=3.2,<4"
+      - name: Create disposable production test database
+        run: python -c "import psycopg; c=psycopg.connect(autocommit=True); c.execute('CREATE DATABASE acxiom_hosting'); c.close()"
+      - name: Verify PostgreSQL production login, audit protection and restart persistence
+        run: python tests/hosting_test.py --provider render --database postgres --output TestResults/postgres-hosting.json
+      - name: Run full HTTP acceptance suite against PostgreSQL
+        shell: bash
+        run: |
+          ASPNETCORE_ENVIRONMENT=Development Database__Provider=PostgreSQL ConnectionStrings__DefaultConnection='Host=localhost;Port=5432;Database=acxiom_acceptance;Username=postgres;Password=ci-only-password;SSL Mode=Disable' dotnet run -c Release --no-build --no-launch-profile --urls http://localhost:5081 > /tmp/acxiom-postgres.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --silent --fail http://localhost:5081/Account/Login > /dev/null; then break; fi
+            sleep 1
+          done
+          python tests/smoke_test.py --base http://localhost:5081 --output TestResults/postgres-acceptance.json || { cat /tmp/acxiom-postgres.log; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgres-results
+          path: TestResults/*.json

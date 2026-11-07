@@ -6,7 +6,7 @@ A working ASP.NET Core MVC sales CRM built for the AcxiomCRM project assignment.
 
 Source code stays in [RithvikKuchi/ACXIOM-DRIVE](https://github.com/RithvikKuchi/ACXIOM-DRIVE). Render can build and host the complete application from this repository.
 
-[Deploy to Render](https://dashboard.render.com/select-repo?type=blueprint&repo=https%3A%2F%2Fgithub.com%2FRithvikKuchi%2FACXIOM-DRIVE) — requires a connected Render account and a **paid** web service with a persistent disk. Review the cost before applying. See [Render setup](docs/RENDER.md). Adding the configuration to GitHub does not itself deploy the service.
+[Deploy to Render](https://dashboard.render.com/select-repo?type=blueprint&repo=https%3A%2F%2Fgithub.com%2FRithvikKuchi%2FACXIOM-DRIVE) — uses **Render Free + Neon Free PostgreSQL**, with no paid disk. Connect both accounts and enter the database and administrator secrets in Render. See [free hosting setup](docs/RENDER.md). Adding the configuration to GitHub does not itself deploy the service.
 
 ## Run the project
 
@@ -71,6 +71,8 @@ docs/              Report, API reference, demonstration and test evidence
 ```
 
 SQLite creates `App_Data/acxiom.db` on first launch. This file is intentionally excluded from Git and delivery packages. The model uses separate CRM tables with shared fields in `CrmRecords` (EF table-per-type mapping), Identity tables, foreign keys, indexes, unique customer identifiers, and triggers that reject audit modification/deletion.
+
+The free cloud deployment selects PostgreSQL using `Database__Provider=PostgreSQL`. Accounts, records, audit logs and Data Protection keys are stored remotely so they survive Render restarts. Local Development continues to use SQLite by default.
 
 ## Run acceptance tests
 

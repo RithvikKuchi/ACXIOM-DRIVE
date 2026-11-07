@@ -11,8 +11,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 var cloudHosting = CloudHosting.Configure(builder);
 Directory.CreateDirectory(Path.Combine(builder.Environment.ContentRootPath, "App_Data"));
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+DatabaseHosting.Configure(builder);
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.User.RequireUniqueEmail = true;

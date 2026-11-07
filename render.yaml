@@ -1,20 +1,16 @@
-# Paid plan required: SQLite and login keys must survive restarts.
+# Free web service. Use a Neon Free PostgreSQL database for durable data and keys.
 services:
   - type: web
     name: acxiom-drive
     runtime: docker
     repo: https://github.com/RithvikKuchi/ACXIOM-DRIVE
     branch: main
-    plan: starter
+    plan: free
     region: singapore
     numInstances: 1
     dockerfilePath: ./Dockerfile
     healthCheckPath: /healthz
     autoDeployTrigger: checksPass
-    disk:
-      name: acxiom-data
-      mountPath: /app/App_Data
-      sizeGB: 1
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
@@ -24,8 +20,10 @@ services:
         value: "10000"
       - key: Hosting__RenderProxy
         value: "true"
-      - key: Hosting__DataPath
-        value: /app/App_Data
+      - key: Database__Provider
+        value: PostgreSQL
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
       - key: Authentication__AllowRegistration
         value: "false"
       - key: Bootstrap__Email

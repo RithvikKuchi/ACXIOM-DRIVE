@@ -14,8 +14,21 @@ public static class SeedData
         var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         await db.Database.EnsureCreatedAsync();
         // Constant SQL only: protect append-only audit rows even from accidental data-layer edits.
-        await db.Database.ExecuteSqlRawAsync("CREATE TRIGGER IF NOT EXISTS AuditLogs_NoUpdate BEFORE UPDATE ON AuditLogs BEGIN SELECT RAISE(ABORT, 'Audit records are append-only'); END;");
-        await db.Database.ExecuteSqlRawAsync("CREATE TRIGGER IF NOT EXISTS AuditLogs_NoDelete BEFORE DELETE ON AuditLogs BEGIN SELECT RAISE(ABORT, 'Audit records are append-only'); END;");
+        if (db.Database.IsNpgsql())
+        {
+            await db.Database.ExecuteSqlRawAsync("""
+                CREATE OR REPLACE FUNCTION acxiom_reject_audit_change() RETURNS trigger
+                LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Audit records are append-only'; END; $$;
+                CREATE OR REPLACE TRIGGER "AuditLogs_AppendOnly"
+                BEFORE UPDATE OR DELETE ON "AuditLogs"
+                FOR EACH ROW EXECUTE FUNCTION acxiom_reject_audit_change();
+                """);
+        }
+        else
+        {
+            await db.Database.ExecuteSqlRawAsync("CREATE TRIGGER IF NOT EXISTS AuditLogs_NoUpdate BEFORE UPDATE ON AuditLogs BEGIN SELECT RAISE(ABORT, 'Audit records are append-only'); END;");
+            await db.Database.ExecuteSqlRawAsync("CREATE TRIGGER IF NOT EXISTS AuditLogs_NoDelete BEFORE DELETE ON AuditLogs BEGIN SELECT RAISE(ABORT, 'Audit records are append-only'); END;");
+        }
         foreach (var role in new[] { "Admin", "Manager", "SalesExecutive" })
             if (!await roles.RoleExistsAsync(role)) Require(await roles.CreateAsync(new IdentityRole(role)));
 

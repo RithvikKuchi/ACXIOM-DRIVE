@@ -1,11 +1,14 @@
 using AcxiomCRM.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 
 namespace AcxiomCRM.Data;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options), IDataProtectionKeyContext
 {
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Lead> Leads => Set<Lead>();
     public DbSet<Opportunity> Opportunities => Set<Opportunity>();
@@ -39,6 +42,18 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         b.Entity<Activity>().HasOne(x => x.Opportunity).WithMany().HasForeignKey(x => x.OpportunityId).OnDelete(DeleteBehavior.Restrict);
         b.Entity<AuditLog>().HasIndex(x => x.CreatedDate);
         b.Entity<AuditLog>().HasIndex(x => new { x.EntityName, x.RecordId });
+        if (Database.IsNpgsql())
+        {
+            // Form dates have no offset. Store them as UTC calendar values; UTC event
+            // timestamps stay unchanged and explicit Local timestamps are normalized.
+            var utc = new ValueConverter<DateTime, DateTime>(
+                value => value.Kind == DateTimeKind.Local ? value.ToUniversalTime() : DateTime.SpecifyKind(value, DateTimeKind.Utc),
+                value => DateTime.SpecifyKind(value, DateTimeKind.Utc));
+            foreach (var property in b.Model.GetEntityTypes().SelectMany(entity => entity.GetProperties()))
+                if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                    property.SetValueConverter(utc);
+        }
+        else b.Ignore<DataProtectionKey>(); // Existing SQLite databases keep their current schema.
     }
 
     private void ProtectAudit()

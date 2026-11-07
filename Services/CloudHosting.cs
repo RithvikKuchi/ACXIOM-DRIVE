@@ -23,16 +23,19 @@ public static class CloudHosting
         if (onRailway && onRender) throw new InvalidOperationException("Configure only one cloud hosting provider.");
         var provider = onRender ? "Render" : "Railway";
 
-        var volume = builder.Configuration[onRender ? "Hosting:DataPath" : "RAILWAY_VOLUME_MOUNT_PATH"];
-        if (string.IsNullOrWhiteSpace(volume) || !Path.IsPathFullyQualified(volume) || !Directory.Exists(volume))
-            throw new InvalidOperationException($"Attach a {provider} persistent disk/volume and configure its path before starting this application.");
-        var keys = Path.Combine(volume, "keys");
-        Directory.CreateDirectory(keys);
-        builder.Configuration["ConnectionStrings:DefaultConnection"] = new SqliteConnectionStringBuilder
+        if (!DatabaseHosting.IsPostgres(builder.Configuration))
         {
-            DataSource = Path.Combine(volume, "acxiom.db"), ForeignKeys = true
-        }.ToString();
-        builder.Services.AddDataProtection().SetApplicationName("AcxiomCRM").PersistKeysToFileSystem(new DirectoryInfo(keys));
+            var volume = builder.Configuration[onRender ? "Hosting:DataPath" : "RAILWAY_VOLUME_MOUNT_PATH"];
+            if (string.IsNullOrWhiteSpace(volume) || !Path.IsPathFullyQualified(volume) || !Directory.Exists(volume))
+                throw new InvalidOperationException($"Attach a {provider} persistent disk/volume and configure its path before starting this application.");
+            var keys = Path.Combine(volume, "keys");
+            Directory.CreateDirectory(keys);
+            builder.Configuration["ConnectionStrings:DefaultConnection"] = new SqliteConnectionStringBuilder
+            {
+                DataSource = Path.Combine(volume, "acxiom.db"), ForeignKeys = true
+            }.ToString();
+            builder.Services.AddDataProtection().SetApplicationName("AcxiomCRM").PersistKeysToFileSystem(new DirectoryInfo(keys));
+        }
 
         var hosts = (builder.Configuration["AllowedHosts"] ?? "localhost;127.0.0.1").Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
         if (onRailway) hosts.Add("healthcheck.railway.app");

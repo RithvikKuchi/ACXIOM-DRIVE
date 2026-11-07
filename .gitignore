@@ -8,4 +8,6 @@ App_Data/
 .vs/
 publish/
 TestResults/
+__pycache__/
+*.pyc
 

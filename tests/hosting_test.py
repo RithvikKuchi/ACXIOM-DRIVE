@@ -16,6 +16,7 @@ p = argparse.ArgumentParser()
 p.add_argument('--dotnet', default='dotnet')
 p.add_argument('--output', default='TestResults/hosting.json')
 p.add_argument('--provider', choices=['railway', 'render'], default='railway')
+p.add_argument('--database', choices=['sqlite', 'postgres'], default='sqlite')
 a = p.parse_args()
 root = Path(__file__).resolve().parents[1]
 (root / 'App_Data').mkdir(exist_ok=True)
@@ -46,12 +47,15 @@ with tempfile.TemporaryDirectory(prefix='hosting-', dir=root / 'App_Data') as sc
         'Bootstrap__Email': 'production-test@example.test', 'Bootstrap__Name': 'Production test admin',
         'Bootstrap__Password': secrets.token_urlsafe(24) + 'Aa9!', 'PORT': str(port),
         'AllowedHosts': 'localhost;127.0.0.1', 'Authentication__AllowRegistration': 'false',
-        'Logging__LogLevel__Default': 'Error'
+        'Logging__LogLevel__Default': 'Error', 'Database__Provider': 'Sqlite'
     })
     if a.provider == 'render':
         for key in ('RAILWAY_SERVICE_ID', 'RAILWAY_VOLUME_MOUNT_PATH', 'RAILWAY_PUBLIC_DOMAIN', 'Hosting__RailwayProxy'):
             env.pop(key, None)
         env.update({'RENDER': 'true', 'RENDER_EXTERNAL_HOSTNAME': hostname, 'Hosting__RenderProxy': 'true', volume_key: scratch})
+    if a.database == 'postgres':
+        env.update({'Database__Provider': 'PostgreSQL', 'ConnectionStrings__DefaultConnection': os.environ['TEST_POSTGRES_CONNECTION']})
+        env.pop(volume_key, None)
     cmd = [a.dotnet, str(root / 'bin/Release/net10.0/AcxiomCRM.dll')]
     proc = None
     log = (volume / 'server.log').open('w', encoding='utf-8')
@@ -89,7 +93,10 @@ with tempfile.TemporaryDirectory(prefix='hosting-', dir=root / 'App_Data') as sc
     try:
         r = start()
         check('Readiness accepts hosting probe hostname', r.status_code == 200 and r.json() == {'status':'ok'})
-        check('SQLite is stored on mounted volume', (volume / 'acxiom.db').is_file())
+        if a.database == 'sqlite':
+            check('SQLite is stored on mounted volume', (volume / 'acxiom.db').is_file())
+        else:
+            check('PostgreSQL hosting starts without local persistent storage', not (volume / 'acxiom.db').exists())
         check('Unknown Host is rejected', requests.get(base + '/healthz', headers={'Host':'attacker.example'}, timeout=5).status_code == 400)
         r = requests.get(base + '/Account/Login', headers={'Host':hostname}, allow_redirects=False, timeout=5)
         check('Plain HTTP redirects to public HTTPS port 443', r.status_code == 307 and r.headers['Location'] == f'https://{hostname}/Account/Login')
@@ -106,14 +113,31 @@ with tempfile.TemporaryDirectory(prefix='hosting-', dir=root / 'App_Data') as sc
         check('Production session is Secure and HttpOnly', 'secure' in cookie and 'httponly' in cookie)
         check('Authenticated session accesses CRM', request(s,'GET','/api/customers').status_code == 200)
         check('Development demo data is absent in production', request(s,'GET','/api/customers').json()['total'] == 0)
-        check('Data Protection keys are persisted', any((volume/'keys').glob('key-*.xml')))
+        if a.database == 'sqlite':
+            check('Data Protection keys are persisted', any((volume/'keys').glob('key-*.xml')))
+        else:
+            import psycopg
+            with psycopg.connect(os.environ['TEST_POSTGRES_DSN'], autocommit=True) as pg:
+                check('Data Protection keys are persisted in PostgreSQL', pg.execute('SELECT COUNT(*) FROM "DataProtectionKeys"').fetchone()[0] > 0)
+                check('Production login creates durable audit records', pg.execute('SELECT COUNT(*) FROM "AuditLogs"').fetchone()[0] > 0)
+                for statement in ('UPDATE "AuditLogs" SET "Action" = \'tampered\'', 'DELETE FROM "AuditLogs"'):
+                    blocked = False
+                    try:
+                        with pg.transaction():
+                            pg.execute(statement)
+                    except psycopg.errors.RaiseException:
+                        blocked = True
+                    check('PostgreSQL blocks direct audit ' + statement.split()[0], blocked)
         stop()
         env.pop('Bootstrap__Password')
         start()
         r = request(s,'GET','/api/auth/me')
         check('Administrator and session survive restart without bootstrap secret', r.status_code == 200 and r.json()['email'] == 'production-test@example.test')
         stop()
-        env.pop(volume_key)
+        if a.database == 'sqlite':
+            env.pop(volume_key)
+        else:
+            env.pop('ConnectionStrings__DefaultConnection')
         missing = subprocess.run(cmd, cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
         check('Cloud startup rejects missing persistent storage configuration', missing.returncode != 0)
     finally:
