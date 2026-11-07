@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-var railwayHosting = RailwayHosting.Configure(builder);
+var cloudHosting = CloudHosting.Configure(builder);
 Directory.CreateDirectory(Path.Combine(builder.Environment.ContentRootPath, "App_Data"));
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -95,7 +95,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
-if (railwayHosting) app.UseForwardedHeaders();
+if (cloudHosting) app.UseForwardedHeaders();
 app.UseExceptionHandler(handler => handler.Run(async context =>
 {
     var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
@@ -132,7 +132,7 @@ app.UseStatusCodePages(async context =>
         await context.HttpContext.Response.WriteAsJsonAsync(new { error = message, errors = new { } });
     }
 });
-// Railway readiness probes use internal HTTP and must not require a login or TLS redirect.
+// Managed hosting readiness probes use internal HTTP without a login or TLS redirect.
 app.Use(async (context, next) =>
 {
     if (context.Request.Path == "/healthz" && (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)))

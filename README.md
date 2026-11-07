@@ -2,6 +2,12 @@
 
 A working ASP.NET Core MVC sales CRM built for the AcxiomCRM project assignment. It includes ASP.NET Core Identity, three roles, customer and lead management, opportunity pipelines, follow-ups, activities, an audit trail, REST APIs, dashboards and CSV reports.
 
+## Deploy from GitHub
+
+Source code stays in [RithvikKuchi/ACXIOM-DRIVE](https://github.com/RithvikKuchi/ACXIOM-DRIVE). Render can build and host the complete application from this repository.
+
+[Deploy to Render](https://dashboard.render.com/select-repo?type=blueprint&repo=https%3A%2F%2Fgithub.com%2FRithvikKuchi%2FACXIOM-DRIVE) — requires a connected Render account and a **paid** web service with a persistent disk. Review the cost before applying. See [Render setup](docs/RENDER.md). Adding the configuration to GitHub does not itself deploy the service.
+
 ## Run the project
 
 Install the **.NET 10 SDK**, open a terminal in this folder, and run:
@@ -47,6 +53,7 @@ New registration always assigns `SalesExecutive`; a submitted role cannot grant 
 - [REST API reference and executable example](docs/API.md)
 - [Verification results](docs/TEST_RESULTS.md)
 - [Railway deployment setup](docs/RAILWAY.md)
+- [Render deployment setup](docs/RENDER.md)
 - [Third-party libraries and licenses](wwwroot/lib/THIRD_PARTY_NOTICES.md)
 
 ## Structure

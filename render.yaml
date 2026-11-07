@@ -1,0 +1,36 @@
+# Paid plan required: SQLite and login keys must survive restarts.
+services:
+  - type: web
+    name: acxiom-drive
+    runtime: docker
+    repo: https://github.com/RithvikKuchi/ACXIOM-DRIVE
+    branch: main
+    plan: starter
+    region: singapore
+    numInstances: 1
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeployTrigger: checksPass
+    disk:
+      name: acxiom-data
+      mountPath: /app/App_Data
+      sizeGB: 1
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DOTNET_ENVIRONMENT
+        value: Production
+      - key: PORT
+        value: "10000"
+      - key: Hosting__RenderProxy
+        value: "true"
+      - key: Hosting__DataPath
+        value: /app/App_Data
+      - key: Authentication__AllowRegistration
+        value: "false"
+      - key: Bootstrap__Email
+        sync: false
+      - key: Bootstrap__Name
+        value: Rithvik Administrator
+      - key: Bootstrap__Password
+        sync: false

@@ -1,4 +1,4 @@
-"""Exercise Production hosting and restart persistence with a simulated Railway ingress.
+"""Exercise Production hosting and restart persistence with simulated managed ingress.
 Run after dotnet build -c Release. This creates only disposable local data.
 """
 import argparse
@@ -15,10 +15,14 @@ import requests
 p = argparse.ArgumentParser()
 p.add_argument('--dotnet', default='dotnet')
 p.add_argument('--output', default='TestResults/hosting.json')
+p.add_argument('--provider', choices=['railway', 'render'], default='railway')
 a = p.parse_args()
 root = Path(__file__).resolve().parents[1]
 (root / 'App_Data').mkdir(exist_ok=True)
 checks = []
+hostname = 'acxiom-test.onrender.com' if a.provider == 'render' else 'acxiom-test.up.railway.app'
+probe_host = hostname if a.provider == 'render' else 'healthcheck.railway.app'
+volume_key = 'Hosting__DataPath' if a.provider == 'render' else 'RAILWAY_VOLUME_MOUNT_PATH'
 
 def check(name, condition):
     checks.append({'name': name, 'passed': bool(condition)})
@@ -33,6 +37,8 @@ with tempfile.TemporaryDirectory(prefix='hosting-', dir=root / 'App_Data') as sc
         port = sock.getsockname()[1]
     base = f'http://127.0.0.1:{port}'
     env = os.environ.copy()
+    for key in ('RENDER', 'RAILWAY_SERVICE_ID', 'RAILWAY_VOLUME_MOUNT_PATH', 'Hosting__DataPath', 'ASPNETCORE_FORWARDEDHEADERS_ENABLED'):
+        env.pop(key, None)
     env.update({
         'ASPNETCORE_ENVIRONMENT': 'Production', 'DOTNET_ENVIRONMENT': 'Production',
         'RAILWAY_SERVICE_ID': 'local-hosting-test', 'RAILWAY_VOLUME_MOUNT_PATH': scratch,
@@ -42,6 +48,10 @@ with tempfile.TemporaryDirectory(prefix='hosting-', dir=root / 'App_Data') as sc
         'AllowedHosts': 'localhost;127.0.0.1', 'Authentication__AllowRegistration': 'false',
         'Logging__LogLevel__Default': 'Error'
     })
+    if a.provider == 'render':
+        for key in ('RAILWAY_SERVICE_ID', 'RAILWAY_VOLUME_MOUNT_PATH', 'RAILWAY_PUBLIC_DOMAIN', 'Hosting__RailwayProxy'):
+            env.pop(key, None)
+        env.update({'RENDER': 'true', 'RENDER_EXTERNAL_HOSTNAME': hostname, 'Hosting__RenderProxy': 'true', volume_key: scratch})
     cmd = [a.dotnet, str(root / 'bin/Release/net10.0/AcxiomCRM.dll')]
     proc = None
     log = (volume / 'server.log').open('w', encoding='utf-8')
@@ -53,7 +63,7 @@ with tempfile.TemporaryDirectory(prefix='hosting-', dir=root / 'App_Data') as sc
             if proc.poll() is not None:
                 raise RuntimeError('Server exited; inspect the hosting test log.')
             try:
-                r = requests.get(base + '/healthz', headers={'Host': 'healthcheck.railway.app'}, timeout=1)
+                r = requests.get(base + '/healthz', headers={'Host': probe_host}, timeout=1)
                 if r.status_code == 200: return r
             except requests.RequestException:
                 pass
@@ -70,7 +80,7 @@ with tempfile.TemporaryDirectory(prefix='hosting-', dir=root / 'App_Data') as sc
     def request(session, method, path, **kwargs):
         # The local test sends HTTP behind a simulated HTTPS edge. Replay Secure
         # cookies explicitly because requests correctly withholds them on HTTP.
-        headers = {'Host': 'acxiom-test.up.railway.app', 'X-Forwarded-Proto': 'https'}
+        headers = {'Host': hostname, 'X-Forwarded-Proto': 'https'}
         headers.update(kwargs.pop('headers', {}))
         if session.cookies:
             headers['Cookie'] = '; '.join(c.name + '=' + c.value for c in session.cookies)
@@ -78,11 +88,11 @@ with tempfile.TemporaryDirectory(prefix='hosting-', dir=root / 'App_Data') as sc
 
     try:
         r = start()
-        check('Readiness accepts Railway internal HTTP hostname', r.status_code == 200 and r.json() == {'status':'ok'})
+        check('Readiness accepts hosting probe hostname', r.status_code == 200 and r.json() == {'status':'ok'})
         check('SQLite is stored on mounted volume', (volume / 'acxiom.db').is_file())
         check('Unknown Host is rejected', requests.get(base + '/healthz', headers={'Host':'attacker.example'}, timeout=5).status_code == 400)
-        r = requests.get(base + '/Account/Login', headers={'Host':'acxiom-test.up.railway.app'}, allow_redirects=False, timeout=5)
-        check('Plain HTTP redirects to public HTTPS port 443', r.status_code == 307 and r.headers['Location'] == 'https://acxiom-test.up.railway.app/Account/Login')
+        r = requests.get(base + '/Account/Login', headers={'Host':hostname}, allow_redirects=False, timeout=5)
+        check('Plain HTTP redirects to public HTTPS port 443', r.status_code == 307 and r.headers['Location'] == f'https://{hostname}/Account/Login')
         s = requests.Session()
         r = request(s, 'GET', '/Account/Login')
         check('Forwarded HTTPS renders login without redirect loop', r.status_code == 200)
@@ -103,9 +113,9 @@ with tempfile.TemporaryDirectory(prefix='hosting-', dir=root / 'App_Data') as sc
         r = request(s,'GET','/api/auth/me')
         check('Administrator and session survive restart without bootstrap secret', r.status_code == 200 and r.json()['email'] == 'production-test@example.test')
         stop()
-        env.pop('RAILWAY_VOLUME_MOUNT_PATH')
+        env.pop(volume_key)
         missing = subprocess.run(cmd, cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
-        check('Railway startup rejects missing persistent volume', missing.returncode != 0)
+        check('Cloud startup rejects missing persistent storage configuration', missing.returncode != 0)
     finally:
         stop()
         log.close()
