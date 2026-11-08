@@ -103,6 +103,7 @@ with tempfile.TemporaryDirectory(prefix='hosting-', dir=root / 'App_Data') as sc
         s = requests.Session()
         r = request(s, 'GET', '/Account/Login')
         check('Forwarded HTTPS renders login without redirect loop', r.status_code == 200)
+        check('Disabled registration does not advertise a broken signup link', 'href="/Account/Register"' not in r.text)
         check('Production responses carry HSTS', 'Strict-Transport-Security' in r.headers)
         check('Public registration is disabled', request(s, 'GET', '/Account/Register').status_code == 404)
         check('Anonymous CRM remains protected', request(s, 'GET', '/api/customers').status_code == 401)

@@ -28,7 +28,7 @@ Keep both accounts on their **Free** plans. The root `render.yaml` uses `plan: f
 - `Database__Provider=PostgreSQL` selects the cloud database. Missing or invalid database settings fail startup instead of falling back to ephemeral SQLite.
 - Render provides `RENDER=true` and `RENDER_EXTERNAL_HOSTNAME`. The app listens on `PORT` and permits the generated hostname. Add any custom domain explicitly to `AllowedHosts`.
 - `Hosting__RenderProxy=true` accepts one forwarded HTTPS scheme header from Render's managed ingress. Forwarded host and client IP are not trusted. Keep private-network peers trusted. Audit/throttling IPs use the immediate peer.
-- HTTPS, Secure/HttpOnly cookies, CSRF validation and role/owner restrictions remain enabled. Public registration is disabled.
+- HTTPS, Secure/HttpOnly cookies, CSRF validation and role/owner restrictions remain enabled. Public registration is enabled for Sales Executive accounts only. Administrators can disable it with Authentication__AllowRegistration=false; the sign-in page then shows administrator contact guidance.
 - The remote `DataProtectionKeys` table stores the authentication key ring. Database access therefore includes access to sensitive authentication material; keep credentials private. TLS certificate validation protects database connections in the documented setup.
 - The PostgreSQL audit trigger rejects direct updates/deletes, and the application also enforces append-only audits.
 - GitHub checks gate automatic Render updates. No paid upgrades are requested by the blueprint.
@@ -55,3 +55,4 @@ For PostgreSQL tests, use only a disposable, empty database and set `TEST_POSTGR
 - [Neon Free plan](https://neon.com/pricing)
 - [Npgsql PostgreSQL provider](https://www.npgsql.org/efcore/)
 - [Database-backed Data Protection keys](https://learn.microsoft.com/aspnet/core/security/data-protection/implementation/key-storage-providers)
+

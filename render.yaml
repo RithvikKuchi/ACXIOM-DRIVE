@@ -25,7 +25,7 @@ services:
       - key: ConnectionStrings__DefaultConnection
         sync: false
       - key: Authentication__AllowRegistration
-        value: "false"
+        value: "true"
       - key: Bootstrap__Email
         sync: false
       - key: Bootstrap__Name
